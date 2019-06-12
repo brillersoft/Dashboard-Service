@@ -55,7 +55,6 @@ public class BatchSchedulerController {
 	@ApiOperation(value = "Update the server Configurations", response = ResponseEntity.class, consumes = "Will consumes the server config data in the form of JSON.")
 	public ResponseEntity<?> updateConfigOptions(@RequestBody Request configRequest) {
 		Boolean isSaved = secudlerService.updateConfigOptions(configRequest);
-
 		String msg = isSaved ? "Saved Sauccessfully" : "Failed to saved";
 		return new ResponseEntity<>(msg, isSaved ? HttpStatus.OK : HttpStatus.CONFLICT);
 	}
@@ -112,10 +111,17 @@ public class BatchSchedulerController {
 	@PostMapping("/saveEntity")
 	@ApiOperation(value = "save address details", response = ResponseEntity.class, consumes = "Will Address details.")
 	public ResponseEntity<?> saveEntity(@RequestBody Request request) {
-		Boolean isSuccess = secudlerService.saveEntity(request);
-		String msg = isSuccess ? "Details Saved" : "Failed while saving";
-		return new ResponseEntity<>(msg, isSuccess ? HttpStatus.OK : HttpStatus.CONFLICT);
+		Integer savedEntityId = secudlerService.saveEntity(request);
+		return new ResponseEntity<>(savedEntityId, (savedEntityId!=null) ? HttpStatus.OK : HttpStatus.CONFLICT);
 	}
+//	
+//	@PostMapping("/updateEntity")
+//	@ApiOperation(value = "update address details", response = ResponseEntity.class, consumes = "Will  Update Address details.")
+//	public ResponseEntity<?> updateEntityDetails(@RequestBody Request request) {
+//		Boolean isSuccess = secudlerService.updateEntityDetails(request);
+//		String msg = isSuccess ? "Entity Address Updated" : "Failed while updating";
+//		return new ResponseEntity<>(msg, isSuccess ? HttpStatus.OK : HttpStatus.CONFLICT);
+//	}
 
 
 	@PostMapping("/saveBusinessDivision")

@@ -39,5 +39,7 @@ public interface ISecudlerService {
 
 	public Object getBatchStatus();
 
-	public Boolean saveEntity(Request request);
+	public Integer saveEntity(Request request);
+
+	//public Boolean updateEntityDetails(Request request);
 }
