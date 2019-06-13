@@ -3,6 +3,7 @@ package com.hanogi.batch.services;
 import java.util.List;
 import java.util.Map;
 
+import com.hanogi.batch.response.Response;
 import com.hanogi.batch.utility.Request;
 
 public interface ISecudlerService {
@@ -39,7 +40,10 @@ public interface ISecudlerService {
 
 	public Object getBatchStatus();
 
-	public Boolean saveEntity(Request request);
+	public Response saveEntity(Request request);
 
-	public List<Map<String,Object>> getAllEntities();
+	public Response updateEntityDetail(Request request);
+
+	
+
 }

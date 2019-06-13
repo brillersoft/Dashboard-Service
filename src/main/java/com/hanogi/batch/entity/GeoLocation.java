@@ -8,9 +8,11 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Version;
 
+import com.hanogi.batch.audits.AuditFields;
+
 @Entity
 @Table(name = "geo_location")
-public class GeoLocation {
+public class GeoLocation extends AuditFields<String> {
 	
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
