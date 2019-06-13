@@ -39,6 +39,7 @@ import com.hanogi.batch.repositry.OrganizationDetailsRepo;
 import com.hanogi.batch.repositry.SchedulerJobInfoRepo;
 import com.hanogi.batch.repositry.WorldCityRepo;
 import com.hanogi.batch.repositry.WorldCountryRepo;
+import com.hanogi.batch.response.Response;
 import com.hanogi.batch.services.ISecudlerService;
 import com.hanogi.batch.utility.Request;
 
@@ -71,10 +72,10 @@ public class SecudlerService implements ISecudlerService {
 
 	@Autowired
 	private OrganizationDetailsRepo organizationDetailsRepo;
-	
+
 	@Autowired
 	private DistrictRepo districtRepo;
-	
+
 	@Autowired
 	private ContinentRepo continentRepo;
 
@@ -160,30 +161,29 @@ public class SecudlerService implements ISecudlerService {
 
 		return configOptions;
 	}
-	
+
 	private int saveGeoLocation(Map<String, Integer> geoInfoMap) {
 		GeoLocation geoLocation = new GeoLocation();
 		try {
 			geoLocation.setCountryId(geoInfoMap.get("countryId"));
 			geoLocation.setCityId(geoInfoMap.get("cityId"));
-			geoLocation.setStatus("A");
+			geoLocation.setStatus("1");
 			geoLocation.setContinentId(geoInfoMap.get("continentId"));
 			geoLocation.setDistrictId(geoInfoMap.get("districtId"));
-		}
-		catch(Exception e)
-		{
+		} catch (Exception e) {
 			System.out.println("Error while saving Address" + e.getMessage());
 		}
 		return geoLocationRepo.save(geoLocation).getLocationId();
 
 	}
+
 	@Transactional
 	private int addressSave(Map<String, Object> requestParam) {
-		Integer addId=null;
+		Integer addId = null;
 		AddressDetails addressDetails = new AddressDetails();
 		try {
 			addressDetails.setAddressDetails((String) requestParam.get("Address"));
-			addressDetails.setStatus("A");
+			addressDetails.setStatus("1");
 
 			Map<String, String> addressMap = (Map) requestParam.get("Address_Details");
 
@@ -199,11 +199,11 @@ public class SecudlerService implements ISecudlerService {
 			// TODO make column countryId and get all Data from City object
 			geoInfoMap.put("cityId", cityRepo.findByName(addressMap.get("City")).getCityId());
 			geoInfoMap.put("districtId", districtRepo.findByDistrictName(district).getDistrictId());
-			
-			//Location ID Returned 
+
+			// Location ID Returned
 			int locationId = saveGeoLocation(geoInfoMap);
 			addressDetails.setLocationId(locationId);
-			addressDetails.setAddressDetails("sector-63");
+			addressDetails.setAddressDetails(addressMap.get("Address"));
 			addressDetails.setZipCode((String) addressMap.get("Zip"));
 			addId = addressDetailsRepo.save(addressDetails).getAddressId();
 			return addId;
@@ -212,29 +212,89 @@ public class SecudlerService implements ISecudlerService {
 			return addId;
 		}
 
-		
 	}
 
 	@Override
-	public Integer saveEntity(Request request) {
-		Integer orgId = null;
-		if (request != null) {
+	public Response saveEntity(Request request) {
+		Response response=new Response();
+		try{		
+			if (request != null) {
+				Map<String, Object> requestParam = request.getRequestParam();
+				Integer orgMatch = organizationDetailsRepo.checkDuplicate((String) requestParam.get("Org_Name"),
+						(String) requestParam.get("Org_Code"));
 
-			Map<String, Object> requestParam = request.getRequestParam();
-
-			if (requestParam != null) {
-				Integer addressId = addressSave(requestParam);
-				if (addressId != null) {
-					orgId = organizationDetailSave(requestParam, addressId);
+				if (orgMatch== 0) {
+					if (requestParam != null) {
+						Integer addressId = addressSave(requestParam);
+						if (addressId != null) {
+							response.setResponse(organizationDetailSave(requestParam, addressId));
+							response.setMsg("Successfully saved");
+						}
+					}
+				} else {
+					response.setMsg("Org Name or code already exists");
 				}
 			}
+			return response;
 		}
-		return orgId;
+		catch(Exception e)
+		{
+			System.out.println(e.getMessage());
+			response.setMsg("Failed While Saving");
+			return response;
+		}
+	}
+
+	@Override
+	@Transactional
+	public Response updateEntityDetail(Request request) {
+		Response response=new Response();
+		try {
+			if (request != null) {
+				
+				Map<String, Object> requestParam = request.getRequestParam();
+				Integer orgMatch = organizationDetailsRepo.checkDuplicate((String) requestParam.get("Org_Name"),
+						(String) requestParam.get("Org_Code"));
+				if(orgMatch==0)
+				{
+					Integer entityId = new Integer((String) requestParam.get("Entity_Id"));
+					response.setResponse(entityId);
+					OrganizationDetails details = organizationDetailsRepo.findByLegalEntityId(entityId);
+					AddressDetails addressDetail = addressDetailsRepo.findById(details.getAddressId()).get();
+					addressDetail.setStatus("0");
+					GeoLocation geoLocation = geoLocationRepo.findById(addressDetail.getLocationId()).get();
+					geoLocation.setStatus("0");
+
+					geoLocationRepo.save(geoLocation);
+					addressDetailsRepo.save(addressDetail);
+					Integer addId = addressSave(requestParam);
+					if (addId != null) {
+						details.setAddressId(addId);
+						details.setEntityCode((String) requestParam.get("Org_Code"));
+						details.setDescription((String) requestParam.get("Org_Desc"));
+						details.setEntityName((String) requestParam.get("Org_Name"));
+						response.setMsg(organizationDetailsRepo.save(details) != null ? "Entity Address Updated": "Failed while updating");
+					}
+				}
+				else
+				{
+					response.setMsg("Org Name or Code already exists");
+				}	
+				
+			}
+			return response;
+		}
+		catch(Exception e)
+		{
+			System.out.println(e.getMessage());
+			return response;
+		}
+		
 	}
 
 	private Integer organizationDetailSave(Map<String, Object> requestParam, int addressId) {
 
-		Integer legalEntityId=null;
+		Integer legalEntityId = null;
 		OrganizationDetails organizationDetails = new OrganizationDetails();
 		try {
 			organizationDetails.setEntityName((String) requestParam.get("Org_Name"));
@@ -244,23 +304,19 @@ public class SecudlerService implements ISecudlerService {
 			organizationDetails.setAddressId(addressId);
 
 			// TODO entity_code default set = 1
-			organizationDetails.setEntityCode((String)requestParam.get("Org_Code"));
+			organizationDetails.setEntityCode((String) requestParam.get("Org_Code"));
 
-			// For new entry status must be 'A'
-			organizationDetails.setStatus("A");
-			
+			// For new entry status must be '1'
+			organizationDetails.setStatus("1");
+
 			/// TODO Description default set to Type_Id =1 - "IT Infra Retail"
-			organizationDetails.setDescription((String)requestParam.get("Org_Desc"));
-			legalEntityId=organizationDetailsRepo.save(organizationDetails).getLegalEntityId();
-			return legalEntityId ;
-		}
-		catch(Exception e)
-		{
+			organizationDetails.setDescription((String) requestParam.get("Org_Desc"));
+			legalEntityId = organizationDetailsRepo.save(organizationDetails).getLegalEntityId();
+			return legalEntityId;
+		} catch (Exception e) {
 			System.out.println("Error while saving Organization Address" + e.getMessage());
 			return legalEntityId;
 		}
-		
-		
 
 	}
 
@@ -277,7 +333,7 @@ public class SecudlerService implements ISecudlerService {
 
 			if (requestParam != null) {
 
-				String domainName =(String) requestParam.get("Email_Domain_Name");
+				String domainName = (String) requestParam.get("Email_Domain_Name");
 
 				if (!allDomainsName.contains(domainName)) {
 
@@ -287,29 +343,32 @@ public class SecudlerService implements ISecudlerService {
 
 						JsonObject serverConfigProperties = new JsonObject();
 
-						serverConfigProperties.addProperty("adminUserName",(String) requestParam.get("User_Name"));
+						serverConfigProperties.addProperty("adminUserName", (String) requestParam.get("User_Name"));
 
-						serverConfigProperties.addProperty("adminPassword", (String)requestParam.get("Pwd"));
+						serverConfigProperties.addProperty("adminPassword", (String) requestParam.get("Pwd"));
 
-						serverConfigProperties.addProperty("exchangeServerURL", (String)requestParam.get("Server_Url"));
+						serverConfigProperties.addProperty("exchangeServerURL",
+								(String) requestParam.get("Server_Url"));
 
-						serverConfigProperties.addProperty("exchangeVersion",(String) requestParam.get("Exchange_version"));
+						serverConfigProperties.addProperty("exchangeVersion",
+								(String) requestParam.get("Exchange_version"));
 
-						String domainType =(String) requestParam.get("Domain_Type");
+						String domainType = (String) requestParam.get("Domain_Type");
 
 						if (domainType.equalsIgnoreCase("OnCloud")) {
 
-							serverConfigProperties.addProperty("clientId",(String) requestParam.get("Client_Id"));
+							serverConfigProperties.addProperty("clientId", (String) requestParam.get("Client_Id"));
 
-							serverConfigProperties.addProperty("secreatKey", (String)requestParam.get("Secreat_Key"));
+							serverConfigProperties.addProperty("secreatKey", (String) requestParam.get("Secreat_Key"));
 
-							serverConfigProperties.addProperty("graphApiUrl",(String) requestParam.get("Graph_Api_Url"));
+							serverConfigProperties.addProperty("graphApiUrl",
+									(String) requestParam.get("Graph_Api_Url"));
 						}
 
 						domainDetails.setEmailServerConfig(serverConfigProperties.toString());
 
 						// Must be Values From given list
-						domainDetails.setEmailServiceProvider((String)requestParam.get("Service_Provider"));
+						domainDetails.setEmailServiceProvider((String) requestParam.get("Service_Provider"));
 						domainDetails.setServerDeploymentType(domainType);
 
 						// For new entry status must be '1'

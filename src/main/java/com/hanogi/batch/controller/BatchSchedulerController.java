@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.hanogi.batch.response.Response;
 import com.hanogi.batch.services.ISecudlerService;
 import com.hanogi.batch.utility.Request;
 
@@ -107,22 +108,20 @@ public class BatchSchedulerController {
 		String msg = isSuccess ? "List Saved" : "Failed while saving";
 		return new ResponseEntity<>(msg, isSuccess ? HttpStatus.OK : HttpStatus.CONFLICT);
 	}
-	
+
 	@PostMapping("/saveEntity")
 	@ApiOperation(value = "save address details", response = ResponseEntity.class, consumes = "Will Address details.")
 	public ResponseEntity<?> saveEntity(@RequestBody Request request) {
-		Integer savedEntityId = secudlerService.saveEntity(request);
-		return new ResponseEntity<>(savedEntityId, (savedEntityId!=null) ? HttpStatus.OK : HttpStatus.CONFLICT);
+		Response response = secudlerService.saveEntity(request);
+		return new ResponseEntity<>(response, (response.getResponse() != null) ? HttpStatus.OK : HttpStatus.CONFLICT);
 	}
-//	
-//	@PostMapping("/updateEntity")
-//	@ApiOperation(value = "update address details", response = ResponseEntity.class, consumes = "Will  Update Address details.")
-//	public ResponseEntity<?> updateEntityDetails(@RequestBody Request request) {
-//		Boolean isSuccess = secudlerService.updateEntityDetails(request);
-//		String msg = isSuccess ? "Entity Address Updated" : "Failed while updating";
-//		return new ResponseEntity<>(msg, isSuccess ? HttpStatus.OK : HttpStatus.CONFLICT);
-//	}
 
+	@PostMapping("/updateEntity")
+	@ApiOperation(value = "update address details", response = ResponseEntity.class, consumes = "Will  Update Address details.")
+	public ResponseEntity<?> updateEntityDetails(@RequestBody Request request) {
+		Response response =secudlerService.updateEntityDetail(request);
+		return new ResponseEntity<>(response, (response.getResponse()!=null)  ? HttpStatus.OK : HttpStatus.CONFLICT);
+	}
 
 	@PostMapping("/saveBusinessDivision")
 	@ApiOperation(value = "Add new division in the unit", response = ResponseEntity.class, consumes = "Will consume new division.")
