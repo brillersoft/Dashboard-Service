@@ -56,7 +56,7 @@ public class BatchSchedulerController {
 	public ResponseEntity<?> updateConfigOptions(@RequestBody Request configRequest) {
 		Boolean isSaved = secudlerService.updateConfigOptions(configRequest);
 
-		String msg = isSaved ? "Saved Sauccessfully" : "Failed to saved";
+		String msg = isSaved ? "Updated Sauccessfully" : "Failed to update";
 		return new ResponseEntity<>(msg, isSaved ? HttpStatus.OK : HttpStatus.CONFLICT);
 	}
 
@@ -108,7 +108,7 @@ public class BatchSchedulerController {
 		String msg = isSuccess ? "List Saved" : "Failed while saving";
 		return new ResponseEntity<>(msg, isSuccess ? HttpStatus.OK : HttpStatus.CONFLICT);
 	}
-	
+
 	@PostMapping("/saveEntity")
 	@ApiOperation(value = "save address details", response = ResponseEntity.class, consumes = "Will Address details.")
 	public ResponseEntity<?> saveEntity(@RequestBody Request request) {
@@ -116,7 +116,6 @@ public class BatchSchedulerController {
 		String msg = isSuccess ? "Details Saved" : "Failed while saving";
 		return new ResponseEntity<>(msg, isSuccess ? HttpStatus.OK : HttpStatus.CONFLICT);
 	}
-
 
 	@PostMapping("/saveBusinessDivision")
 	@ApiOperation(value = "Add new division in the unit", response = ResponseEntity.class, consumes = "Will consume new division.")
@@ -147,5 +146,12 @@ public class BatchSchedulerController {
 	public ResponseEntity<?> getBatchStatus() {
 		return new ResponseEntity<>(secudlerService.getBatchStatus(), HttpStatus.OK);
 	}
+	
+	@GetMapping("/getAllEntities")
+	@ApiOperation(value = "Get all city entities List", response = ResponseEntity.class, produces = "Json")
+	public ResponseEntity<?> getAllEntities() {
+		return new ResponseEntity<>(secudlerService.getAllEntities(), HttpStatus.OK);
+	}
+	
 
 }

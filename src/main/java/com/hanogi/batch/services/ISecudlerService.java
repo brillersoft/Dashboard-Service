@@ -40,4 +40,6 @@ public interface ISecudlerService {
 	public Object getBatchStatus();
 
 	public Boolean saveEntity(Request request);
+
+	public List<Map<String,Object>> getAllEntities();
 }

@@ -54,7 +54,7 @@ public class SecudlerService implements ISecudlerService {
 	EmailRepositry emailRepo;
 
 	@Autowired
-	private WorldCountryRepo worldRepo;
+	private WorldCountryRepo worldCountryRepo;
 
 	@Autowired
 	private WorldCityRepo cityRepo;
@@ -150,7 +150,7 @@ public class SecudlerService implements ISecudlerService {
 
 		return configOptions;
 	}
-	
+
 	private int saveGeoLocation(Map<String, Integer> geoInfoMap) {
 
 		GeoLocation geoLocation = new GeoLocation();
@@ -161,24 +161,23 @@ public class SecudlerService implements ISecudlerService {
 		return geoLocationRepo.save(geoLocation).getLocationId();
 
 	}
+
 	@Transactional
 	private int addressSave(Map<String, Object> requestParam) {
 
 		AddressDetails addressDetails = new AddressDetails();
-		addressDetails.setAddressDetails((String)requestParam.get("Address"));
+		addressDetails.setAddressDetails((String) requestParam.get("Address"));
 		addressDetails.setStatus("A");
 		addressDetails.setZipCode("Zip");
-		Map<String,String> addressMap=(Map)requestParam.get("Address_Details");
-		String country =addressMap.get("Country");
-		String city =addressMap.get("City");
-		String district=addressMap.get("District");
+		Map<String, String> addressMap = (Map) requestParam.get("Address_Details");
+		String country = addressMap.get("Country");
+		String city = addressMap.get("City");
+		String district = addressMap.get("District");
 
-		
 		// Saving Geo-Location
 		Map<String, Integer> geoInfoMap = new HashMap<>();
-		geoInfoMap.put("countryId", new Integer(worldRepo.findByCountryName(country).getCountryId()));
+		geoInfoMap.put("countryId", new Integer(worldCountryRepo.findByCountryName(country).getCountryId()));
 
-		
 		// TODO make column countryId and get all Data from City object
 		geoInfoMap.put("cityId", cityRepo.findByName(city).getCityId());
 
@@ -239,7 +238,7 @@ public class SecudlerService implements ISecudlerService {
 
 			if (requestParam != null) {
 
-				String domainName =(String) requestParam.get("Email_Domain_Name");
+				String domainName = (String) requestParam.get("Email_Domain_Name");
 
 				if (!allDomainsName.contains(domainName)) {
 
@@ -249,29 +248,32 @@ public class SecudlerService implements ISecudlerService {
 
 						JsonObject serverConfigProperties = new JsonObject();
 
-						serverConfigProperties.addProperty("adminUserName",(String) requestParam.get("User_Name"));
+						serverConfigProperties.addProperty("adminUserName", (String) requestParam.get("User_Name"));
 
-						serverConfigProperties.addProperty("adminPassword", (String)requestParam.get("Pwd"));
+						serverConfigProperties.addProperty("adminPassword", (String) requestParam.get("Pwd"));
 
-						serverConfigProperties.addProperty("exchangeServerURL", (String)requestParam.get("Server_Url"));
+						serverConfigProperties.addProperty("exchangeServerURL",
+								(String) requestParam.get("Server_Url"));
 
-						serverConfigProperties.addProperty("exchangeVersion",(String) requestParam.get("Exchange_version"));
+						serverConfigProperties.addProperty("exchangeVersion",
+								(String) requestParam.get("Exchange_version"));
 
-						String domainType =(String) requestParam.get("Domain_Type");
+						String domainType = (String) requestParam.get("Domain_Type");
 
 						if (domainType.equalsIgnoreCase("OnCloud")) {
 
-							serverConfigProperties.addProperty("clientId",(String) requestParam.get("Client_Id"));
+							serverConfigProperties.addProperty("clientId", (String) requestParam.get("Client_Id"));
 
-							serverConfigProperties.addProperty("secreatKey", (String)requestParam.get("Secreat_Key"));
+							serverConfigProperties.addProperty("secreatKey", (String) requestParam.get("Secreat_Key"));
 
-							serverConfigProperties.addProperty("graphApiUrl",(String) requestParam.get("Graph_Api_Url"));
+							serverConfigProperties.addProperty("graphApiUrl",
+									(String) requestParam.get("Graph_Api_Url"));
 						}
 
 						domainDetails.setEmailServerConfig(serverConfigProperties.toString());
 
 						// Must be Values From given list
-						domainDetails.setEmailServiceProvider((String)requestParam.get("Service_Provider"));
+						domainDetails.setEmailServiceProvider((String) requestParam.get("Service_Provider"));
 						domainDetails.setServerDeploymentType(domainType);
 
 						// For new entry status must be '1'
@@ -520,7 +522,7 @@ public class SecudlerService implements ISecudlerService {
 	public List<String> getWorldCountry() {
 
 		try {
-			return worldRepo.getCountryNames();
+			return worldCountryRepo.getCountryNames();
 		} catch (Exception e) {
 			System.err.println("Error:" + e.getMessage());
 			return null;
@@ -577,6 +579,46 @@ public class SecudlerService implements ISecudlerService {
 			allBatchStatusList.add(map);
 		}
 		return allBatchStatusList;
+	}
+
+	@Override
+	public List<Map<String, Object>> getAllEntities() {
+		List<Map<String, Object>> entityDetailsList = new ArrayList<>();
+		try {
+			List<OrganizationDetails> allOrgDetails = organizationDetailsRepo.findAll();
+
+			for (OrganizationDetails organizationDetails : allOrgDetails) {
+				Map<String, Object> detailsMap = new HashMap();
+
+				detailsMap.put("Entity_Id", organizationDetails.getLegalEntityId());
+				detailsMap.put("Org_Name", organizationDetails.getEntityName());
+				detailsMap.put("Description", organizationDetails.getDescription());
+				detailsMap.put("Entity_Code", organizationDetails.getEntityCode());
+
+				Integer addressId = organizationDetails.getAddressId();
+
+				AddressDetails addressDetails = addressDetailsRepo.findById(addressId).get();
+
+				Map<String, String> addressMap = new HashMap<>();
+
+				addressMap.put("Address", addressDetails.getAddressDetails());
+
+				// To_Do
+				addressMap.put("Address_Type", "Internal");
+				GeoLocation geoLocation = geoLocationRepo.findById(addressDetails.getLocationId()).get();
+				addressMap.put("City", cityRepo.findById(geoLocation.getCityId()).get().getName());
+				addressMap.put("Country", worldCountryRepo.findById(geoLocation.getCountryId()).get().getCountryName());
+				addressMap.put("Zip", addressDetails.getZipCode());
+
+				detailsMap.put("Address_Details", addressMap);
+
+				entityDetailsList.add(detailsMap);
+			}
+			return entityDetailsList;
+		} catch (Exception e) {
+			return null;
+		}
+
 	}
 
 }
