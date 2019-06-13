@@ -8,11 +8,9 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Version;
 
-import com.hanogi.batch.audits.AuditFields;
-
 @Entity
 @Table(name = "LEGAL_ENTITY")
-public class OrganizationDetails extends AuditFields<String> {
+public class OrganizationDetails {
 	
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

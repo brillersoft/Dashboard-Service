@@ -9,8 +9,6 @@ import java.util.Optional;
 
 import javax.transaction.Transactional;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -22,18 +20,14 @@ import com.hanogi.batch.constants.DeploymentTypes;
 import com.hanogi.batch.constants.EmailServiceProviders;
 import com.hanogi.batch.entity.AddressDetails;
 import com.hanogi.batch.entity.BatchRunDetails;
-import com.hanogi.batch.entity.Continent;
 import com.hanogi.batch.entity.Email;
 import com.hanogi.batch.entity.EmailDomainDetails;
 import com.hanogi.batch.entity.ExecutionStatus;
 import com.hanogi.batch.entity.GeoLocation;
 import com.hanogi.batch.entity.OrganizationDetails;
 import com.hanogi.batch.entity.SchedulerJobInfo;
-import com.hanogi.batch.entity.WorldCountry;
 import com.hanogi.batch.repositry.AddressDetailsRepo;
 import com.hanogi.batch.repositry.BatchRunDetailsRepo;
-import com.hanogi.batch.repositry.ContinentRepo;
-import com.hanogi.batch.repositry.DistrictRepo;
 import com.hanogi.batch.repositry.EmailDomainDetailsRepo;
 import com.hanogi.batch.repositry.EmailRepositry;
 import com.hanogi.batch.repositry.GeoLocationRepo;
@@ -41,14 +35,11 @@ import com.hanogi.batch.repositry.OrganizationDetailsRepo;
 import com.hanogi.batch.repositry.SchedulerJobInfoRepo;
 import com.hanogi.batch.repositry.WorldCityRepo;
 import com.hanogi.batch.repositry.WorldCountryRepo;
-import com.hanogi.batch.response.Response;
 import com.hanogi.batch.services.ISecudlerService;
 import com.hanogi.batch.utility.Request;
 
 @Service
 public class SecudlerService implements ISecudlerService {
-	
-	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	@Autowired
 	SchedulerJobInfoRepo schedulerJobInfoRepo;
@@ -63,7 +54,7 @@ public class SecudlerService implements ISecudlerService {
 	EmailRepositry emailRepo;
 
 	@Autowired
-	private WorldCountryRepo worldRepo;
+	private WorldCountryRepo worldCountryRepo;
 
 	@Autowired
 	private WorldCityRepo cityRepo;
@@ -76,12 +67,6 @@ public class SecudlerService implements ISecudlerService {
 
 	@Autowired
 	private OrganizationDetailsRepo organizationDetailsRepo;
-
-	@Autowired
-	private DistrictRepo districtRepo;
-
-	@Autowired
-	private ContinentRepo continentRepo;
 
 	public boolean saveNewScheduler(SchedulerJobInfo schedulerJobInfo) {
 		try {
@@ -167,161 +152,76 @@ public class SecudlerService implements ISecudlerService {
 	}
 
 	private int saveGeoLocation(Map<String, Integer> geoInfoMap) {
-		log.info("Inside saveGeoLocation"+geoInfoMap);
+
 		GeoLocation geoLocation = new GeoLocation();
-		try {
-			geoLocation.setCountryId(geoInfoMap.get("countryId"));
-			geoLocation.setCityId(geoInfoMap.get("cityId"));
-			geoLocation.setStatus("1");
-			geoLocation.setContinentId(geoInfoMap.get("continentId"));
-			geoLocation.setDistrictId(geoInfoMap.get("districtId"));
-		} catch (Exception e) {
-			log.error(e.getMessage());
-		}
+		geoLocation.setCountryId(geoInfoMap.get("countryId"));
+		geoLocation.setCityId(geoInfoMap.get("cityId"));
+		geoLocation.setStatus("A");
+
 		return geoLocationRepo.save(geoLocation).getLocationId();
 
 	}
 
 	@Transactional
 	private int addressSave(Map<String, Object> requestParam) {
-		log.info("Inside addressSave"+requestParam);
-		Integer addId = null;
+
 		AddressDetails addressDetails = new AddressDetails();
-		try {
-			addressDetails.setAddressDetails((String) requestParam.get("Address"));
-			addressDetails.setStatus("1");
+		addressDetails.setAddressDetails((String) requestParam.get("Address"));
+		addressDetails.setStatus("A");
+		addressDetails.setZipCode("Zip");
+		Map<String, String> addressMap = (Map) requestParam.get("Address_Details");
+		String country = addressMap.get("Country");
+		String city = addressMap.get("City");
+		String district = addressMap.get("District");
 
-			Map<String, String> addressMap = (Map) requestParam.get("Address_Details");
+		// Saving Geo-Location
+		Map<String, Integer> geoInfoMap = new HashMap<>();
+		geoInfoMap.put("countryId", new Integer(worldCountryRepo.findByCountryName(country).getCountryId()));
 
-			String district = addressMap.get("District");
+		// TODO make column countryId and get all Data from City object
+		geoInfoMap.put("cityId", cityRepo.findByName(city).getCityId());
 
-			// Saving Geo-Location
-			Map<String, Integer> geoInfoMap = new HashMap<>();
-			WorldCountry country = worldRepo.findByCountryName(addressMap.get("Country"));
-			geoInfoMap.put("countryId", new Integer(country.getCountryId()));
-			Continent c = continentRepo.findByContinentName(country.getContinent());
-			geoInfoMap.put("continentId", c.getContinentId());
+		int locationId = saveGeoLocation(geoInfoMap);
+		addressDetails.setLocationId(locationId);
 
-			// TODO make column countryId and get all Data from City object
-			geoInfoMap.put("cityId", cityRepo.findByName(addressMap.get("City")).getCityId());
-			geoInfoMap.put("districtId", districtRepo.findByDistrictName(district).getDistrictId());
-
-			// Location ID Returned
-			int locationId = saveGeoLocation(geoInfoMap);
-			addressDetails.setLocationId(locationId);
-			addressDetails.setAddressDetails(addressMap.get("Address"));
-			addressDetails.setZipCode((String) addressMap.get("Zip"));
-			addId = addressDetailsRepo.save(addressDetails).getAddressId();
-			return addId;
-		} catch (Exception e) {
-			log.error(e.getMessage());
-			return addId;
-		}
-
+		return addressDetailsRepo.save(addressDetails).getAddressId();
 	}
 
 	@Override
-	public Response saveEntity(Request request) {
-		log.info("Inside saveEntity"+request);
-		Response response=new Response();
-		try{		
-			if (request != null) {
-				Map<String, Object> requestParam = request.getRequestParam();
-				Integer orgMatch = organizationDetailsRepo.checkDuplicate((String) requestParam.get("Org_Name"),
-						(String) requestParam.get("Org_Code"));
+	public Boolean saveEntity(Request request) {
+		Boolean isSaved = false;
+		if (request != null) {
 
-				if (orgMatch== 0) {
-					if (requestParam != null) {
-						Integer addressId = addressSave(requestParam);
-						if (addressId != null) {
-							response.setResponse(organizationDetailSave(requestParam, addressId));
-							response.setMsg("Successfully saved");
-						}
-					}
-				} else {
-					response.setMsg("Org Name or code already exists");
+			Map<String, Object> requestParam = request.getRequestParam();
+
+			if (requestParam != null) {
+				int addressId = addressSave(requestParam);
+				if (addressId != 0) {
+					isSaved = organizationDetailSave(requestParam, addressId);
 				}
 			}
-			return response;
 		}
-		catch(Exception e)
-		{
-			log.error(e.getMessage());
-			response.setMsg("Failed While Saving");
-			return response;
-		}
+		return isSaved;
 	}
 
-	@Override
-	@Transactional
-	public Response updateEntityDetail(Request request) {
-		Response response=new Response();
-		log.info("Inside updateEntityDetail"+request);
-		try {
-			if (request != null) {
-				
-				Map<String, Object> requestParam = request.getRequestParam();
-				Integer orgMatch = organizationDetailsRepo.checkDuplicate((String) requestParam.get("Org_Name"),
-						(String) requestParam.get("Org_Code"));
-				if(orgMatch==0)
-				{
-					Integer entityId = new Integer((String) requestParam.get("Entity_Id"));
-					response.setResponse(entityId);
-					OrganizationDetails details = organizationDetailsRepo.findByLegalEntityId(entityId);
-					AddressDetails addressDetail = addressDetailsRepo.findById(details.getAddressId()).get();
-					addressDetail.setStatus("0");
-					GeoLocation geoLocation = geoLocationRepo.findById(addressDetail.getLocationId()).get();
-					geoLocation.setStatus("0");
+	private boolean organizationDetailSave(Map<String, Object> requestParam, int addressId) {
 
-					geoLocationRepo.save(geoLocation);
-					addressDetailsRepo.save(addressDetail);
-					Integer addId = addressSave(requestParam);
-					if (addId != null) {
-						details.setAddressId(addId);
-						details.setEntityCode((String) requestParam.get("Org_Code"));
-						details.setDescription((String) requestParam.get("Org_Desc"));
-						details.setEntityName((String) requestParam.get("Org_Name"));
-						response.setMsg(organizationDetailsRepo.save(details) != null ? "Entity Address Updated": "Failed while updating");
-					}
-				}
-				else
-				{
-					response.setMsg("Org Name or Code already exists");
-				}	
-				
-			}
-			return response;
-		}
-		catch(Exception e)
-		{
-			log.error(e.getMessage());
-			System.out.println(e.getMessage());
-			return response;
-		}
-		
-	}
-
-	private Integer organizationDetailSave(Map<String, Object> requestParam, int addressId) {
-		log.info("Inside organizationDetailSave"+requestParam);
-		Integer legalEntityId = null;
 		OrganizationDetails organizationDetails = new OrganizationDetails();
-		try {
-			organizationDetails.setEntityName((String) requestParam.get("Org_Name"));
+		organizationDetails.setEntityName("");
 
-			/// TODO Description default set to Type_Id =1 - "IT Infra Retail"
-			organizationDetails.setTypeId(1);
-			organizationDetails.setAddressId(addressId);
-			organizationDetails.setEntityCode((String) requestParam.get("Org_Code"));
-			
-			// For new entry status must be '1'
-			organizationDetails.setStatus("1");
-			organizationDetails.setDescription((String) requestParam.get("Org_Desc"));
-			legalEntityId = organizationDetailsRepo.save(organizationDetails).getLegalEntityId();
-			return legalEntityId;
-		} catch (Exception e) {
-			log.error(e.getMessage());
-			return legalEntityId;
-		}
+		// TODO type_id default set = 1
+		organizationDetails.setTypeId(1);
+		organizationDetails.setAddressId(addressId);
+
+		// TODO entity_code default set = 1
+		organizationDetails.setEntityCode("1");
+
+		// For new entry status must be 'A'
+		organizationDetails.setStatus("A");
+
+		/// TODO Description default set to Type_Id =1 - "IT Infra Retail"
+		organizationDetails.setDescription("IT Infra Retail");
+		return organizationDetailsRepo.save(organizationDetails) != null;
 
 	}
 
@@ -622,7 +522,7 @@ public class SecudlerService implements ISecudlerService {
 	public List<String> getWorldCountry() {
 
 		try {
-			return worldRepo.getCountryNames();
+			return worldCountryRepo.getCountryNames();
 		} catch (Exception e) {
 			System.err.println("Error:" + e.getMessage());
 			return null;
@@ -679,6 +579,46 @@ public class SecudlerService implements ISecudlerService {
 			allBatchStatusList.add(map);
 		}
 		return allBatchStatusList;
+	}
+
+	@Override
+	public List<Map<String, Object>> getAllEntities() {
+		List<Map<String, Object>> entityDetailsList = new ArrayList<>();
+		try {
+			List<OrganizationDetails> allOrgDetails = organizationDetailsRepo.findAll();
+
+			for (OrganizationDetails organizationDetails : allOrgDetails) {
+				Map<String, Object> detailsMap = new HashMap();
+
+				detailsMap.put("Entity_Id", organizationDetails.getLegalEntityId());
+				detailsMap.put("Org_Name", organizationDetails.getEntityName());
+				detailsMap.put("Description", organizationDetails.getDescription());
+				detailsMap.put("Entity_Code", organizationDetails.getEntityCode());
+
+				Integer addressId = organizationDetails.getAddressId();
+
+				AddressDetails addressDetails = addressDetailsRepo.findById(addressId).get();
+
+				Map<String, String> addressMap = new HashMap<>();
+
+				addressMap.put("Address", addressDetails.getAddressDetails());
+
+				// To_Do
+				addressMap.put("Address_Type", "Internal");
+				GeoLocation geoLocation = geoLocationRepo.findById(addressDetails.getLocationId()).get();
+				addressMap.put("City", cityRepo.findById(geoLocation.getCityId()).get().getName());
+				addressMap.put("Country", worldCountryRepo.findById(geoLocation.getCountryId()).get().getCountryName());
+				addressMap.put("Zip", addressDetails.getZipCode());
+
+				detailsMap.put("Address_Details", addressMap);
+
+				entityDetailsList.add(detailsMap);
+			}
+			return entityDetailsList;
+		} catch (Exception e) {
+			return null;
+		}
+
 	}
 
 }
