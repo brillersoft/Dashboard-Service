@@ -9,6 +9,8 @@ import java.util.Optional;
 
 import javax.transaction.Transactional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -45,6 +47,8 @@ import com.hanogi.batch.utility.Request;
 
 @Service
 public class SecudlerService implements ISecudlerService {
+	
+	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	@Autowired
 	SchedulerJobInfoRepo schedulerJobInfoRepo;
@@ -163,6 +167,7 @@ public class SecudlerService implements ISecudlerService {
 	}
 
 	private int saveGeoLocation(Map<String, Integer> geoInfoMap) {
+		log.info("Inside saveGeoLocation"+geoInfoMap);
 		GeoLocation geoLocation = new GeoLocation();
 		try {
 			geoLocation.setCountryId(geoInfoMap.get("countryId"));
@@ -171,7 +176,7 @@ public class SecudlerService implements ISecudlerService {
 			geoLocation.setContinentId(geoInfoMap.get("continentId"));
 			geoLocation.setDistrictId(geoInfoMap.get("districtId"));
 		} catch (Exception e) {
-			System.out.println("Error while saving Address" + e.getMessage());
+			log.error(e.getMessage());
 		}
 		return geoLocationRepo.save(geoLocation).getLocationId();
 
@@ -179,6 +184,7 @@ public class SecudlerService implements ISecudlerService {
 
 	@Transactional
 	private int addressSave(Map<String, Object> requestParam) {
+		log.info("Inside addressSave"+requestParam);
 		Integer addId = null;
 		AddressDetails addressDetails = new AddressDetails();
 		try {
@@ -208,7 +214,7 @@ public class SecudlerService implements ISecudlerService {
 			addId = addressDetailsRepo.save(addressDetails).getAddressId();
 			return addId;
 		} catch (Exception e) {
-			System.out.println("Error while saving Address" + e.getMessage());
+			log.error(e.getMessage());
 			return addId;
 		}
 
@@ -216,6 +222,7 @@ public class SecudlerService implements ISecudlerService {
 
 	@Override
 	public Response saveEntity(Request request) {
+		log.info("Inside saveEntity"+request);
 		Response response=new Response();
 		try{		
 			if (request != null) {
@@ -239,7 +246,7 @@ public class SecudlerService implements ISecudlerService {
 		}
 		catch(Exception e)
 		{
-			System.out.println(e.getMessage());
+			log.error(e.getMessage());
 			response.setMsg("Failed While Saving");
 			return response;
 		}
@@ -249,6 +256,7 @@ public class SecudlerService implements ISecudlerService {
 	@Transactional
 	public Response updateEntityDetail(Request request) {
 		Response response=new Response();
+		log.info("Inside updateEntityDetail"+request);
 		try {
 			if (request != null) {
 				
@@ -286,6 +294,7 @@ public class SecudlerService implements ISecudlerService {
 		}
 		catch(Exception e)
 		{
+			log.error(e.getMessage());
 			System.out.println(e.getMessage());
 			return response;
 		}
@@ -293,28 +302,24 @@ public class SecudlerService implements ISecudlerService {
 	}
 
 	private Integer organizationDetailSave(Map<String, Object> requestParam, int addressId) {
-
+		log.info("Inside organizationDetailSave"+requestParam);
 		Integer legalEntityId = null;
 		OrganizationDetails organizationDetails = new OrganizationDetails();
 		try {
 			organizationDetails.setEntityName((String) requestParam.get("Org_Name"));
 
-			// TODO type_id default set = 1
+			/// TODO Description default set to Type_Id =1 - "IT Infra Retail"
 			organizationDetails.setTypeId(1);
 			organizationDetails.setAddressId(addressId);
-
-			// TODO entity_code default set = 1
 			organizationDetails.setEntityCode((String) requestParam.get("Org_Code"));
-
+			
 			// For new entry status must be '1'
 			organizationDetails.setStatus("1");
-
-			/// TODO Description default set to Type_Id =1 - "IT Infra Retail"
 			organizationDetails.setDescription((String) requestParam.get("Org_Desc"));
 			legalEntityId = organizationDetailsRepo.save(organizationDetails).getLegalEntityId();
 			return legalEntityId;
 		} catch (Exception e) {
-			System.out.println("Error while saving Organization Address" + e.getMessage());
+			log.error(e.getMessage());
 			return legalEntityId;
 		}
 
