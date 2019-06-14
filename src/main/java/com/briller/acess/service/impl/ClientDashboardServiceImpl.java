@@ -185,9 +185,8 @@ public class ClientDashboardServiceImpl implements IClientDashboardService {
 		}
 	}
 
-
 //		empToneMap.put(ToneTypes.fear, 0.10);
 //		empToneMap.put(ToneTypes.sadness, 0.05);
 //		empToneMap.put(ToneTypes.joy, 0.80);
 //		empToneMap.put(ToneTypes.confidence, 0.75);
-	}
+}

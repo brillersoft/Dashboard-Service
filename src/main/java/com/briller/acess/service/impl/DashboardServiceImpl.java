@@ -93,7 +93,7 @@ public class DashboardServiceImpl implements IDashboardService {
 			response.setResponse(accountDetailsList);
 			return response;
 		} catch (Exception e) {
-			log.error("error :"+ e.getMessage());
+			log.error("error :" + e.getMessage());
 			response.setMsg("Something Went Wrong");
 			return response;
 		}
@@ -143,11 +143,11 @@ public class DashboardServiceImpl implements IDashboardService {
 				}
 				return response;
 			} else {
-					log.error("Request Parameter is null");
-					return response;
+				log.error("Request Parameter is null");
+				return response;
 			}
 		} catch (Exception e) {
-			log.error("error : "+e.getMessage());
+			log.error("error : " + e.getMessage());
 			response.setMsg("Something Went Wrong");
 			return response;
 		}

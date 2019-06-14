@@ -5,7 +5,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,6 +22,7 @@ import com.briller.acess.service.IDashboardService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
+@ControllerAdvice
 @RestController
 @CrossOrigin
 @Api(value = "Rest Services for briller")
@@ -50,17 +54,15 @@ public class DashboardController {
 
 	@RequestMapping(method = RequestMethod.POST, value = "/getDashboardData")
 	@ApiOperation(value = "Running Dashboard data job no argument", response = String.class)
-	public ResponseEntity<?> getDashboardData(@RequestBody RequestParamDashboard requestParam)
-			throws Exception {
+	public ResponseEntity<?> getDashboardData(@RequestBody RequestParamDashboard requestParam) throws Exception {
 
 		log.info("Inside getDashboardData post  method" + requestParam.toString());
-		Response response=iDashboardService.getDashboardData();
-		return new  ResponseEntity<>(response, response.getResponse() != null ? HttpStatus.OK : HttpStatus.CONFLICT);
-		
+		Response response = iDashboardService.getDashboardData();
+		return new ResponseEntity<>(response, response.getResponse() != null ? HttpStatus.OK : HttpStatus.CONFLICT);
+
 //		return "[{\"account_name\":\"CITI\",\"account_id\":2,\"relationships\":4,\"escalations\":1,\"total_interactions\":25,\"negative_interactions\":10,\"csat\":60,\"margin\":23,\"revenue\":12475678},"
 //		+ "{\"account_name\":\"RBC\",\"account_id\":1,\"relationships\":25,\"escalations\":4,\"total_interactions\":50,\"negative_interactions\":4,\"csat\":80,\"margin\":32,\"revenue\":2345567}]";
 	}
-
 
 	@RequestMapping(method = RequestMethod.POST, value = "/getTeamRelationshipHealthForDashboard")
 	@ApiOperation(value = "Running Dashboard data job no argument", response = String.class)
@@ -68,8 +70,8 @@ public class DashboardController {
 			throws Exception {
 
 		log.info("Inside getTeamRelationshipHealthForDashboard post  method" + requestParam.toString());
-		
-		Response response=iDashboardService.getTeamRelationshipHealthForDashboard(requestParam);
+
+		Response response = iDashboardService.getTeamRelationshipHealthForDashboard(requestParam);
 		return new ResponseEntity<>(response, response.getResponse() != null ? HttpStatus.OK : HttpStatus.CONFLICT);
 	}
 //		return " [\r\n" + " {\r\n" + "   \"name\": \"Allison Johnson\",\r\n" + "   \"role\": \"Project Lead\",\r\n"
@@ -77,16 +79,22 @@ public class DashboardController {
 //				+ "   \"name\": \"Andrew Hewins\",\r\n" + "   \"role\": \"Sales Associate\",\r\n"
 //				+ "   \"score\": 0.88,\r\n" + "  \" relationships\": 4\r\n" + " }]";
 
-		
-		@RequestMapping(method = RequestMethod.POST, value = "/getAllClients")
-		@ApiOperation(value = "Running Dashboard data job no argument", response = String.class)
-		public ResponseEntity<?> getAllClientsForDashboard(@RequestBody RequestParamDashboard requestParam)
-				throws Exception {
+	@RequestMapping(method = RequestMethod.POST, value = "/getAllClients")
+	@ApiOperation(value = "Running Dashboard data job no argument", response = String.class)
+	public ResponseEntity<?> getAllClientsForDashboard(@RequestBody RequestParamDashboard requestParam)
+			throws Exception {
 
-			log.info("Inside getAllClientsForDashboard post  method" + requestParam.toString());
-			
-			Response response=iDashboardService.getAllClients(requestParam);
-			return new ResponseEntity<>(response, response.getResponse() != null ? HttpStatus.OK : HttpStatus.CONFLICT);
+		log.info("Inside getAllClientsForDashboard post  method" + requestParam.toString());
+
+		Response response = iDashboardService.getAllClients(requestParam);
+		return new ResponseEntity<>(response, response.getResponse() != null ? HttpStatus.OK : HttpStatus.CONFLICT);
+	}
+
+	@ExceptionHandler(HttpMessageNotReadableException.class)
+	public Response handleMissingRequestBody(Exception ex) {
+		Response response = new Response();
+		response.setMsg("Request Body is Null ");
+		return response;
 	}
 
 }
