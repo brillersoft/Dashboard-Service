@@ -8,7 +8,7 @@ public interface IDashboardService {
 
 	void getDashBoardMenuItems(String loggedinUser);
 
-	Response getDashboardData();
+	Response getDashboardData(RequestParamDashboard requestParam);
 	
 	Response getTeamRelationshipHealthForDashboard(RequestParamDashboard requestParam);
 	

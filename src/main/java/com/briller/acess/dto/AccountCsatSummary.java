@@ -13,8 +13,19 @@ public class AccountCsatSummary {
 	@Column(name = "account_id")
 	private Integer accountId;
 
-	@Column(name = "realtionships")
+	@Column(name = "relationships")
 	private int relationships;
+	
+	@Column(name = "total_emails")
+	private int totalEmails;
+
+	public int getTotalEmails() {
+		return totalEmails;
+	}
+
+	public void setTotalEmails(int totalEmails) {
+		this.totalEmails = totalEmails;
+	}
 
 	@Column(name = "ESCALATIONS")
 	private int escalations;

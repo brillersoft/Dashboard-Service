@@ -12,55 +12,64 @@ import com.briller.acess.configs.audit.AuditFields;
 @Table(name = "employee_csat_summary")
 public class EmployeeCsatSummary extends AuditFields<String>  {
 	
-
-	@Column(name = "NUM_OF_INTERACTIONS")
-	private Integer num_of_interactions;
+	@Id
+	@Column(name = "CLIENT_ID")
+	private Integer clientId;
 	
-	@Column(name = "NUM_OF_EMAILS")
-	private Integer num_of_emails;
+	@Column(name = "TOTAL_EMAILS")
+	private Integer totalEmails;
+	
+	@Column(name = "TOTAL_INTERACTIONS")
+	private Integer totalInteractions;
 	
 	@Column(name = "NEGATIVE_INTERACTIONS")
-	private Integer negative_interactions;
+	private Integer negativeInteractions;
+	
+	@Column(name = "EMPLOYEE_EMAIL")
+	private String employeeEmail;
 	
 	@Column(name = "EMPLOYEE_ID")
 	private Integer employeeId;
 	
-	@Id
-	@Column(name = "CLIENT_ID")
-	private Integer clientId;
-
 	@Column(name = "ACCOUNT_ID")
 	private int accountId;
 
 	@Column(name = "CSAT")
-	private int csat;
+	private double csat;
 	
 	@Version
 	private Integer versionNum;
-	
-	
-	public Integer getNum_of_interactions() {
-		return num_of_interactions;
+
+	public Integer getTotalInteractions() {
+		return totalInteractions;
 	}
 
-	public void setNum_of_interactions(Integer num_of_interactions) {
-		this.num_of_interactions = num_of_interactions;
+	public void setTotalInteractions(Integer totalInteractions) {
+		this.totalInteractions = totalInteractions;
 	}
 
-	public Integer getNum_of_emails() {
-		return num_of_emails;
+	public Integer getTotalEmails() {
+		return totalEmails;
 	}
 
-	public void setNum_of_emails(Integer num_of_emails) {
-		this.num_of_emails = num_of_emails;
+	public void setTotalEmails(Integer totalEmails) {
+		this.totalEmails = totalEmails;
 	}
 
-	public Integer getNegative_interactions() {
-		return negative_interactions;
+	public String getEmployeEmail() {
+		return employeeEmail;
 	}
 
-	public void setNegative_interactions(Integer negative_interactions) {
-		this.negative_interactions = negative_interactions;
+	public void setEmployeEmail(String employeeEmail) {
+		this.employeeEmail = employeeEmail;
+	}
+
+	public Integer getNegativeInteractions() {
+		return negativeInteractions;
+	}
+
+	public void setNegativeInteractions(Integer negativeInteractions) {
+		this.negativeInteractions = negativeInteractions;
 	}
 
 	public Integer getEmployeeId() {
@@ -87,11 +96,11 @@ public class EmployeeCsatSummary extends AuditFields<String>  {
 		this.accountId = accountId;
 	}
 
-	public int getCsat() {
+	public double getCsat() {
 		return csat;
 	}
 
-	public void setCsat(int csat) {
+	public void setCsat(double csat) {
 		this.csat = csat;
 	}
 
@@ -102,4 +111,5 @@ public class EmployeeCsatSummary extends AuditFields<String>  {
 	public void setVersionNum(Integer versionNum) {
 		this.versionNum = versionNum;
 	}
+	
 }

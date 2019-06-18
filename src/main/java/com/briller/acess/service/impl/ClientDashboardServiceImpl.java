@@ -109,7 +109,7 @@ public class ClientDashboardServiceImpl implements IClientDashboardService {
 									relationship.setInitials(clientDetail.getFirstName().charAt(0) + ""
 											+ (clientDetail.getLastName().isEmpty() ? ""
 													: clientDetail.getLastName().charAt(0)));
-									relationship.setNumConversations(emp.getNum_of_interactions());
+									relationship.setNumConversations(emp.getTotalInteractions());
 									relationship.setNumEscalations(
 											accountCsatRepo.findByAccountId(emp.getAccountId()).getEscalations());
 									relationship.setScore(emp.getCsat());
@@ -117,13 +117,17 @@ public class ClientDashboardServiceImpl implements IClientDashboardService {
 									// EMP TONE
 									int indvToneId = 11214;
 
-									String indTone = individualToneRepositry.findByIndividualToneId(indvToneId)
-											.getIndividualTone();
+									//String indTone = individualToneRepositry.findByIndividualToneId(indvToneId)
+									//		.getIndividualTone();
 
-									String[] expressionToneList = indTone.split(",");
+									//String[] expressionToneList = indTone.split(",");
 
 									Map<ToneTypes, Double> empToneMap = new HashMap<ToneTypes, Double>();
-
+									empToneMap.put(ToneTypes.anger, 0.211);
+									empToneMap.put(ToneTypes.fear, 0.22);
+									empToneMap.put(ToneTypes.sadness, 0.55);
+									empToneMap.put(ToneTypes.joy, 0.88);
+									empToneMap.put(ToneTypes.confidence, 0.99);
 //									for (String expressionTone : expressionToneList) {
 //										String[] tone = expressionTone.split(",");
 //

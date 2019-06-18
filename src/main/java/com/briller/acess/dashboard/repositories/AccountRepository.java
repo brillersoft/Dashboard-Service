@@ -11,6 +11,7 @@ public interface AccountRepository extends CrudRepository<Account, Integer> {
 	List<Account> findAll();
 	
 	 Account findByAccountName(String account);
+	 Account findByAccountId(int accountId);
 	 
 	 
 	 

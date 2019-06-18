@@ -57,7 +57,7 @@ public class DashboardController {
 	public ResponseEntity<?> getDashboardData(@RequestBody RequestParamDashboard requestParam) throws Exception {
 
 		log.info("Inside getDashboardData post  method" + requestParam.toString());
-		Response response = iDashboardService.getDashboardData();
+		Response response = iDashboardService.getDashboardData(requestParam);
 		return new ResponseEntity<>(response, response.getResponse() != null ? HttpStatus.OK : HttpStatus.CONFLICT);
 
 //		return "[{\"account_name\":\"CITI\",\"account_id\":2,\"relationships\":4,\"escalations\":1,\"total_interactions\":25,\"negative_interactions\":10,\"csat\":60,\"margin\":23,\"revenue\":12475678},"
