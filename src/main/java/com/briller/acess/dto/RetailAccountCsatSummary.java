@@ -2,25 +2,28 @@ package com.briller.acess.dto;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Version;
+
 
 @Entity
-@Table(name = "ACCOUNT_CSAT_SUMMARY")
-public class AccountCsatSummary {
-
+@Table(name = "retail_account_csat_summary")
+public class RetailAccountCsatSummary {
+	
+	
 	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "id_num")	
+	private Integer idNum;
+
 	@Column(name = "account_id")
 	private Integer accountId;
 
-	@Column(name = "relationships")
-	private int relationships;
-	
-	@Column(name = "total_emails")
-	private int totalEmails;
-	
 	@Column(name = "ESCALATIONS")
-	private int escalations;
+	private String escalations;
 
 	@Column(name = "total_interactions")
 	private int totalInteractions;
@@ -31,35 +34,30 @@ public class AccountCsatSummary {
 	@Column(name = "CSAT")
 	private double csat;
 	
-	public int getTotalEmails() {
-		return totalEmails;
+	@Version
+	private Integer versionNum;
+	
+	public Integer getIdNum() {
+		return idNum;
 	}
 
-	public void setTotalEmails(int totalEmails) {
-		this.totalEmails = totalEmails;
+	public void setIdNum(Integer idNum) {
+		this.idNum = idNum;
 	}
 
-	public int getAccountId() {
+	public Integer getAccountId() {
 		return accountId;
 	}
 
-	public void setAccountId(int accountId) {
+	public void setAccountId(Integer accountId) {
 		this.accountId = accountId;
 	}
 
-	public int getRelationships() {
-		return relationships;
-	}
-
-	public void setRelationships(int relationships) {
-		this.relationships = relationships;
-	}
-
-	public int getEscaltions() {
+	public String getEscalations() {
 		return escalations;
 	}
 
-	public void setEscaltions(int escalations) {
+	public void setEscalations(String escalations) {
 		this.escalations = escalations;
 	}
 
@@ -69,18 +67,6 @@ public class AccountCsatSummary {
 
 	public void setTotalInteractions(int totalInteractions) {
 		this.totalInteractions = totalInteractions;
-	}
-
-	public int getEscalations() {
-		return escalations;
-	}
-
-	public void setEscalations(int escalations) {
-		this.escalations = escalations;
-	}
-
-	public void setAccountId(Integer accountId) {
-		this.accountId = accountId;
 	}
 
 	public int getNegativeInteractions() {
@@ -99,4 +85,13 @@ public class AccountCsatSummary {
 		this.csat = csat;
 	}
 
+	public Integer getVersionNum() {
+		return versionNum;
+	}
+
+	public void setVersionNum(Integer versionNum) {
+		this.versionNum = versionNum;
+	}
+
+	
 }

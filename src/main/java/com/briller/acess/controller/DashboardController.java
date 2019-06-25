@@ -89,6 +89,18 @@ public class DashboardController {
 		Response response = iDashboardService.getAllClients(requestParam);
 		return new ResponseEntity<>(response, response.getResponse() != null ? HttpStatus.OK : HttpStatus.CONFLICT);
 	}
+	@RequestMapping(method = RequestMethod.POST, value = "/getIndividualRevenueDetails")
+	@ApiOperation(value = "Running Dashboard data job no argument", response = String.class)
+	public ResponseEntity<?> getIndividualRevenueDetails(@RequestBody RequestParamDashboard requestParam)
+			throws Exception {
+
+		log.info("Inside getIndiviualRevenueDetails post  method" + requestParam.toString());
+
+		Response response = iDashboardService.getIndividualRevenueDetails(requestParam);
+		return new ResponseEntity<>(response, response.getResponse() != null ? HttpStatus.OK : HttpStatus.CONFLICT);
+	}
+	
+	
 
 	@ExceptionHandler(HttpMessageNotReadableException.class)
 	public Response handleMissingRequestBody(Exception ex) {

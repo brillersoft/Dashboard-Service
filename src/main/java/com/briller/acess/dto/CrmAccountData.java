@@ -14,7 +14,6 @@ public class CrmAccountData {
 	@Column(name = "crm_data_id")
 	private int crmDataId;
 
-	
 	@Column(name = "account_id")
 	private int accountId;
 

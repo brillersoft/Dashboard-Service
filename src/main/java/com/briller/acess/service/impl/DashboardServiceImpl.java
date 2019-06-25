@@ -18,7 +18,6 @@ import com.briller.acess.dashboard.repositories.RoleRepo;
 import com.briller.acess.dto.Account;
 import com.briller.acess.dto.DashboardData;
 import com.briller.acess.dto.Employee;
-import com.briller.acess.dto.EmployeeCsatSummary;
 import com.briller.acess.dto.RequestParamDashboard;
 import com.briller.acess.response.Response;
 import com.briller.acess.service.IDashboardService;
@@ -126,33 +125,25 @@ public class DashboardServiceImpl implements IDashboardService {
 			if (requestParam != null) {
 				response = new Response();
 				log.info(
-						"Inside get getTeamRelationshipHealthForDashboard Data post  method -- service Implementation");
+						"Inside getTeam RelationshipHealthForDashboard Data post  method -- service Implementation");
 				Account account = accountRepository.findByAccountName(requestParam.getClient().toUpperCase());
 
 				if (account != null) {
 					TeamRelationshipHealthDashboardData teamRelationshipData = new TeamRelationshipHealthDashboardData();
 					List<TeamRelationshipHealth> teamList = new ArrayList<>();
-
+					
 					List<Integer> Employees = employeeCsatSummaryRepo.findDistinctEmployees(account.getAccountId());
 					for (int i : Employees) {
 						Employee emp = employeeRepo.findByEmployeeId(i);
-
 						TeamRelationshipHealth teamData = new TeamRelationshipHealth();
 						teamData.setName(emp.getFirstName() + " " + emp.getLastName());
 
 						// Mapping by RoleId in Employee_role_Mapping Table
 						int roleId = employeeRoleMappingRepo.findByEmployeeId(i).getRole().getRoleId();
-
 						teamData.setRole(roleRepo.findByRoleId(roleId).getRoleName());
 						teamData.setRelationships(account.getAccountCsatSummary().getRelationships());
 
-						List<EmployeeCsatSummary> empList = employeeCsatSummaryRepo.getAllEmpById(emp.getEmployeeId());
-						
-						double score = 0.0;
-						for (EmployeeCsatSummary e : empList) {
-							score += e.getCsat();
-						}
-						score = (score / empList.size());
+						double score =employeeCsatSummaryRepo.getAvgCsatScore(emp.getEmployeeId());
 						teamData.setScore(score);
 						teamList.add(teamData);
 					}
@@ -176,8 +167,82 @@ public class DashboardServiceImpl implements IDashboardService {
 
 	@Override
 	public Response getAllClients(RequestParamDashboard requestParam) {
-		// Response response=new Response();
-		return new Response();
+
+		Response response = new Response();
+		try {	
+			log.info("Inside getAllClients Data post  method -- service Implementation");
+			if (requestParam != null) {
+				List<Integer> listOfaccountId = employeeCsatSummaryRepo
+						.findDistictAccountId(requestParam.getLoginEmail());
+				LinkedHashMap<Integer, String> map = new LinkedHashMap<>();
+				List<Account> accounts = accountRepository.getAllClients(listOfaccountId);
+
+				for (Account account : accounts) {
+					map.put(account.getAccountId(), account.getAccountName());
+				}
+				response.setMsg("Successful");
+				response.setResponse(map);
+				return response;
+			} else {
+				log.error("Request Parameter is null");
+				return response;
+			}
+		} catch (Exception e) {
+			log.error("error : " + e.getMessage());
+			response.setMsg("Something Went Wrong");
+			return response;
+		}
+	}
+
+	public Response getIndividualRevenueDetails(RequestParamDashboard requestParam) {
+		Response response = new Response();
+		try {
+			log.info("Inside getIndividualRevenueDetails post  method -- service Implementation");
+			if (requestParam != null) {
+				List<Integer> listOfaccountId = employeeCsatSummaryRepo
+						.findDistictAccountId(requestParam.getLoginEmail());
+				List<LinkedHashMap<String, Object>> accountDetailsList = new ArrayList<>();
+				List<Account> accounts = accountRepository.getAllClients(listOfaccountId);
+
+				for (Account account : accounts) {
+					LinkedHashMap<String, Object> map = new LinkedHashMap<>();
+					try {
+						map.put("account_id", account.getAccountId());
+						map.put("account_name", account.getAccountName());
+						map.put("revenue", account.getCrmAccountData().getRevenue());
+						map.put("margin", account.getCrmAccountData().getMargin());
+						map.put("At-Risk", "");
+						map.put("escalations", account.getAccountCsatSummary().getEscalations());
+						map.put("relationships", account.getAccountCsatSummary().getRelationships());
+						//OverAll Health - fetch All Employees and get total score of them 
+						List<Integer> listOfEmp = employeeCsatSummaryRepo.findDistinctEmployees(account.getAccountId());
+						double empScore=0.00;
+						for(int i :listOfEmp)
+						{
+							empScore+=employeeCsatSummaryRepo.getAvgScore(i,account.getAccountId());
+						}
+						double totalScore=(empScore/listOfEmp.size());
+						map.put("overall_health", totalScore);
+					} catch (NullPointerException e) {
+						log.error("Some Paramater recieved is null");
+						response.setMsg("Internal Server Error");
+						response.setResponse(null);
+						return response;
+					}
+					accountDetailsList.add(map);
+				}
+				response.setMsg("Successful");
+				response.setResponse(accountDetailsList);
+				return response;
+			} else {
+				log.error("Request Parameter is null");
+				return response;
+			}
+		} catch (Exception e) {
+			log.error("error : " + e.getMessage());
+			response.setMsg("Something Went Wrong");
+			return response;
+		}
 	}
 
 }

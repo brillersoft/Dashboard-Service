@@ -13,5 +13,7 @@ public interface IDashboardService {
 	Response getTeamRelationshipHealthForDashboard(RequestParamDashboard requestParam);
 	
 	Response getAllClients(RequestParamDashboard requestParam);
+
+	Response getIndividualRevenueDetails(RequestParamDashboard requestParam);
 	
 }
