@@ -12,6 +12,7 @@ import com.briller.acess.configs.audit.AuditFields;
 @Table(name = "employee_csat_summary")
 public class EmployeeCsatSummary extends AuditFields<String>  {
 	
+	
 	@Id
 	@Column(name = "CLIENT_ID")
 	private Integer clientId;

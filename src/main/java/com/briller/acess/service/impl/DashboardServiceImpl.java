@@ -12,8 +12,10 @@ import org.springframework.stereotype.Component;
 import com.briller.acess.dashboard.repositories.AccountRepository;
 import com.briller.acess.dashboard.repositories.DashboardRepository;
 import com.briller.acess.dashboard.repositories.EmployeeCsatSummaryRepo;
+import com.briller.acess.dashboard.repositories.EmployeeEmailMappingRepositry;
 import com.briller.acess.dashboard.repositories.EmployeeRepo;
 import com.briller.acess.dashboard.repositories.EmployeeRoleMappingRepo;
+import com.briller.acess.dashboard.repositories.RetailEmployeeCsatSummaryRepo;
 import com.briller.acess.dashboard.repositories.RoleRepo;
 import com.briller.acess.dto.Account;
 import com.briller.acess.dto.DashboardData;
@@ -38,7 +40,13 @@ public class DashboardServiceImpl implements IDashboardService {
 	private EmployeeCsatSummaryRepo employeeCsatSummaryRepo;
 
 	@Autowired
+	private RetailEmployeeCsatSummaryRepo retailEmployeeCsatSummaryRepo;
+	
+	@Autowired
 	private EmployeeRepo employeeRepo;
+
+	@Autowired
+	private EmployeeEmailMappingRepositry employeeEmailMappingRepositry;
 
 	@Autowired
 	private EmployeeRoleMappingRepo employeeRoleMappingRepo;
@@ -69,7 +77,7 @@ public class DashboardServiceImpl implements IDashboardService {
 		try {
 			log.info("Inside get Dashboard Data post  method -- service Implementation");
 			if (requestParam != null) {
-				List<Integer> listOfaccountId = employeeCsatSummaryRepo
+				List<Integer> listOfaccountId = retailEmployeeCsatSummaryRepo
 						.findDistictAccountId(requestParam.getLoginEmail());
 				List<LinkedHashMap<String, Object>> accountDetailsList = new ArrayList<>();
 				if (listOfaccountId != null) {
@@ -124,32 +132,41 @@ public class DashboardServiceImpl implements IDashboardService {
 		try {
 			if (requestParam != null) {
 				response = new Response();
-				log.info(
-						"Inside getTeam RelationshipHealthForDashboard Data post  method -- service Implementation");
+				log.info("Inside getTeam RelationshipHealthForDashboard Data post  method -- service Implementation");
 				Account account = accountRepository.findByAccountName(requestParam.getClient().toUpperCase());
 
 				if (account != null) {
 					TeamRelationshipHealthDashboardData teamRelationshipData = new TeamRelationshipHealthDashboardData();
 					List<TeamRelationshipHealth> teamList = new ArrayList<>();
-					
-					List<Integer> Employees = employeeCsatSummaryRepo.findDistinctEmployees(account.getAccountId());
-					for (int i : Employees) {
-						Employee emp = employeeRepo.findByEmployeeId(i);
-						TeamRelationshipHealth teamData = new TeamRelationshipHealth();
-						teamData.setName(emp.getFirstName() + " " + emp.getLastName());
+						
+					List<String> EmployeeEmails = retailEmployeeCsatSummaryRepo.findDistinctEmployees(account.getAccountId());
+					if(EmployeeEmails.size()!=0)
+					{
+						for (String empEmail : EmployeeEmails) {
+							int empId = employeeEmailMappingRepositry.getEmpId(empEmail);
+							Employee emp = employeeRepo.findByEmployeeId(empId);
+							TeamRelationshipHealth teamData = new TeamRelationshipHealth();
+							teamData.setName(emp.getFirstName() + " " + emp.getLastName());
 
-						// Mapping by RoleId in Employee_role_Mapping Table
-						int roleId = employeeRoleMappingRepo.findByEmployeeId(i).getRole().getRoleId();
-						teamData.setRole(roleRepo.findByRoleId(roleId).getRoleName());
-						teamData.setRelationships(account.getAccountCsatSummary().getRelationships());
+							// Mapping by RoleId in Employee_role_Mapping Table
+							int roleId = employeeRoleMappingRepo.findByEmployeeId(empId).getRole().getRoleId();
+							teamData.setRole(roleRepo.findByRoleId(roleId).getRoleName());
+							teamData.setRelationships(account.getAccountCsatSummary().getRelationships());
 
-						double score =employeeCsatSummaryRepo.getAvgCsatScore(emp.getEmployeeId());
-						teamData.setScore(score);
-						teamList.add(teamData);
+							double score = retailEmployeeCsatSummaryRepo.getAvgCsatScore(empEmail);
+							score=Math.floor(score * 100) / 100;
+							teamData.setScore(score);
+							teamList.add(teamData);
+						}
+						teamRelationshipData.setTeamRelationshipHealth(teamList);
+						response.setMsg("OK");
+						response.setResponse(teamRelationshipData);
 					}
-					teamRelationshipData.setTeamRelationshipHealth(teamList);
-					response.setMsg("OK");
-					response.setResponse(teamRelationshipData);
+					else
+					{
+						response.setMsg("NO Employees under this Account Exists");
+					}
+				
 				} else {
 					response.setMsg("No such Client exists");
 				}
@@ -169,10 +186,10 @@ public class DashboardServiceImpl implements IDashboardService {
 	public Response getAllClients(RequestParamDashboard requestParam) {
 
 		Response response = new Response();
-		try {	
+		try {
 			log.info("Inside getAllClients Data post  method -- service Implementation");
 			if (requestParam != null) {
-				List<Integer> listOfaccountId = employeeCsatSummaryRepo
+				List<Integer> listOfaccountId = retailEmployeeCsatSummaryRepo
 						.findDistictAccountId(requestParam.getLoginEmail());
 				LinkedHashMap<Integer, String> map = new LinkedHashMap<>();
 				List<Account> accounts = accountRepository.getAllClients(listOfaccountId);
@@ -199,7 +216,7 @@ public class DashboardServiceImpl implements IDashboardService {
 		try {
 			log.info("Inside getIndividualRevenueDetails post  method -- service Implementation");
 			if (requestParam != null) {
-				List<Integer> listOfaccountId = employeeCsatSummaryRepo
+				List<Integer> listOfaccountId = retailEmployeeCsatSummaryRepo
 						.findDistictAccountId(requestParam.getLoginEmail());
 				List<LinkedHashMap<String, Object>> accountDetailsList = new ArrayList<>();
 				List<Account> accounts = accountRepository.getAllClients(listOfaccountId);
@@ -214,14 +231,13 @@ public class DashboardServiceImpl implements IDashboardService {
 						map.put("At-Risk", "");
 						map.put("escalations", account.getAccountCsatSummary().getEscalations());
 						map.put("relationships", account.getAccountCsatSummary().getRelationships());
-						//OverAll Health - fetch All Employees and get total score of them 
-						List<Integer> listOfEmp = employeeCsatSummaryRepo.findDistinctEmployees(account.getAccountId());
-						double empScore=0.00;
-						for(int i :listOfEmp)
-						{
-							empScore+=employeeCsatSummaryRepo.getAvgScore(i,account.getAccountId());
+						// OverAll Health - fetch All Employees and get total score of them
+						List<String> listOfEmpEmails = retailEmployeeCsatSummaryRepo.findDistinctEmployees(account.getAccountId());
+						double empScore = 0.00;
+						for (String email : listOfEmpEmails) {
+							empScore += retailEmployeeCsatSummaryRepo.getAvgScoreOfAccount(email, account.getAccountId());
 						}
-						double totalScore=(empScore/listOfEmp.size());
+						double totalScore = (empScore / listOfEmpEmails.size());
 						map.put("overall_health", totalScore);
 					} catch (NullPointerException e) {
 						log.error("Some Paramater recieved is null");

@@ -17,6 +17,11 @@ public interface EmployeeEmailMappingRepositry extends CrudRepository<EmployeeEm
 	@Query(value = "select email_id from employee_emailid_mapping where employee_id=?1", 
 			  nativeQuery = true)
 	public String getEmailId(int  empId);
+	
+	@Query(value = "select employee_id from employee_emailid_mapping where email_id=?1", 
+			  nativeQuery = true)
+	public int getEmpId(String  empEmail);
+	
 	EmployeeEmailMapping findByEmployeeId(String emailId);
 		
 }

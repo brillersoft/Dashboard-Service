@@ -11,9 +11,11 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import com.briller.acess.configs.audit.AuditFields;
+
 @Entity
 @Table(name = "EMAIL_HEADER")
-public class EmailHeader {
+public class EmailHeader extends AuditFields<String>{
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
