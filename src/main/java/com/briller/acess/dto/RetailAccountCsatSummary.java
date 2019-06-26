@@ -27,7 +27,7 @@ public class RetailAccountCsatSummary extends AuditFields<String> {
 	private Integer accountId;
 
 	@Column(name = "ESCALATIONS")
-	private String escalations;
+	private int escalations;
 
 	@Column(name = "TOTAL_INTERACTIONS")
 	private int totalInteractions;
@@ -57,11 +57,11 @@ public class RetailAccountCsatSummary extends AuditFields<String> {
 		this.accountId = accountId;
 	}
 
-	public String getEscalations() {
+	public int getEscalations() {
 		return escalations;
 	}
 
-	public void setEscalations(String escalations) {
+	public void setEscalations(int escalations) {
 		this.escalations = escalations;
 	}
 

@@ -13,6 +13,24 @@ public class Client {
 	@Id
 	@Column(name = "client_id")
 	private int clientId;
+	
+	@Column(name = "FIRST_NAME")
+	private String firstName;
+
+	@Column(name = "LAST_NAME")
+	private String lastName;
+
+	@Column(name = "MIDDLE_NAME")
+	private String middleName;
+
+	@Column(name = "ACCOUNT_ID")
+	private String accountId;
+
+	@Column(name = "STATUS")
+	private String status;
+
+	@Version
+	private Integer versionNum;
 
 	public int getClientId() {
 		return clientId;
@@ -70,22 +88,6 @@ public class Client {
 		this.versionNum = versionNum;
 	}
 
-	@Column(name = "FIRST_NAME")
-	private String firstName;
-
-	@Column(name = "LAST_NAME")
-	private String lastName;
-
-	@Column(name = "MIDDLE_NAME")
-	private String middleName;
-
-	@Column(name = "ACCOUNT_ID")
-	private String accountId;
-
-	@Column(name = "STATUS")
-	private String status;
-
-	@Version
-	private Integer versionNum;
+	
 
 }

@@ -63,6 +63,16 @@ public class DashboardController {
 //		return "[{\"account_name\":\"CITI\",\"account_id\":2,\"relationships\":4,\"escalations\":1,\"total_interactions\":25,\"negative_interactions\":10,\"csat\":60,\"margin\":23,\"revenue\":12475678},"
 //		+ "{\"account_name\":\"RBC\",\"account_id\":1,\"relationships\":25,\"escalations\":4,\"total_interactions\":50,\"negative_interactions\":4,\"csat\":80,\"margin\":32,\"revenue\":2345567}]";
 	}
+	
+	@RequestMapping(method = RequestMethod.POST, value = "/getRetailDashboardData")
+	@ApiOperation(value = "Running Dashboard data job no argument", response = String.class)
+	public ResponseEntity<?> getRetailDashboardData(@RequestBody RequestParamDashboard requestParam) throws Exception {
+
+		log.info("Inside getRetailDashboardData post  method" + requestParam.toString());
+		Response response = iDashboardService.getRetailDashboardData(requestParam);
+		return new ResponseEntity<>(response, response.getResponse() != null ? HttpStatus.OK : HttpStatus.CONFLICT);
+
+	}
 
 	@RequestMapping(method = RequestMethod.POST, value = "/getTeamRelationshipHealthForDashboard")
 	@ApiOperation(value = "Running Dashboard data job no argument", response = String.class)

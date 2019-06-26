@@ -15,12 +15,15 @@ import com.briller.acess.dashboard.repositories.EmployeeCsatSummaryRepo;
 import com.briller.acess.dashboard.repositories.EmployeeEmailMappingRepositry;
 import com.briller.acess.dashboard.repositories.EmployeeRepo;
 import com.briller.acess.dashboard.repositories.EmployeeRoleMappingRepo;
+import com.briller.acess.dashboard.repositories.RetailAccountCsatSummaryRepo;
+import com.briller.acess.dashboard.repositories.RetailClientRepository;
 import com.briller.acess.dashboard.repositories.RetailEmployeeCsatSummaryRepo;
 import com.briller.acess.dashboard.repositories.RoleRepo;
 import com.briller.acess.dto.Account;
 import com.briller.acess.dto.DashboardData;
 import com.briller.acess.dto.Employee;
 import com.briller.acess.dto.RequestParamDashboard;
+import com.briller.acess.dto.RetailClient;
 import com.briller.acess.response.Response;
 import com.briller.acess.service.IDashboardService;
 import com.briller.acess.teamRelationshipHealth.TeamRelationshipHealth;
@@ -40,8 +43,11 @@ public class DashboardServiceImpl implements IDashboardService {
 	private EmployeeCsatSummaryRepo employeeCsatSummaryRepo;
 
 	@Autowired
+	private RetailAccountCsatSummaryRepo retailAccountCsatSummaryRepo;
+
+	@Autowired
 	private RetailEmployeeCsatSummaryRepo retailEmployeeCsatSummaryRepo;
-	
+
 	@Autowired
 	private EmployeeRepo employeeRepo;
 
@@ -50,6 +56,9 @@ public class DashboardServiceImpl implements IDashboardService {
 
 	@Autowired
 	private EmployeeRoleMappingRepo employeeRoleMappingRepo;
+
+	@Autowired
+	private RetailClientRepository retailClientRepository;
 
 	@Autowired
 	private RoleRepo roleRepo;
@@ -77,7 +86,7 @@ public class DashboardServiceImpl implements IDashboardService {
 		try {
 			log.info("Inside get Dashboard Data post  method -- service Implementation");
 			if (requestParam != null) {
-				List<Integer> listOfaccountId = retailEmployeeCsatSummaryRepo
+				List<Integer> listOfaccountId = employeeCsatSummaryRepo
 						.findDistictAccountId(requestParam.getLoginEmail());
 				List<LinkedHashMap<String, Object>> accountDetailsList = new ArrayList<>();
 				if (listOfaccountId != null) {
@@ -125,6 +134,65 @@ public class DashboardServiceImpl implements IDashboardService {
 
 	}
 
+	public Response getRetailDashboardData(RequestParamDashboard requestParam) {
+		Response response = new Response();
+		try {
+			if (requestParam != null) {
+				List<Integer> listOfaccountId = retailEmployeeCsatSummaryRepo
+						.findDistictAccountId(requestParam.getLoginEmail());
+				List<LinkedHashMap<String, Object>> accountDetailsList = new ArrayList<>();
+				if (listOfaccountId != null) {
+					for (int accId : listOfaccountId) {
+						RetailClient retailClient = retailClientRepository.findByAccountId(accId);
+						LinkedHashMap<String, Object> map = new LinkedHashMap<>();
+//						RetailAccountCsatSummary retailAccountCsatSummary = retailAccountCsatSummaryRepo
+//								.findByAccountId(retailClient.getAccountId());
+						try {
+							int Id=retailClient.getAccountId();
+							map.put("account_id",Id);
+							map.put("account_name", retailClient.getDomainName());
+							// retailClient.getRetailAccountCsatSummary().getRelationships())
+							// default relationships set to 10
+							map.put("relationships", "10");
+							map.put("escalations", retailAccountCsatSummaryRepo.getAvgEscalations(Id));
+							map.put("totalInteractions", retailAccountCsatSummaryRepo.getAvgTotalInteractions(Id));
+							map.put("negativeInteractions", retailAccountCsatSummaryRepo.getAvgNegativeInteractions(Id));
+							map.put("csat", retailAccountCsatSummaryRepo.getAvgCsat(Id));
+							// retailClient.getCrmAccountData().getMargin()
+							map.put("margin", "100");
+							// retailClient.getCrmAccountData().getRevenue()
+							map.put("revenue", "100000");
+						} catch (NullPointerException e) {
+							log.error("Some Paramater recieved from retail_acc_csat_summary is null");
+							response.setMsg("Internal Server Error");
+							response.setResponse(null);
+							return response;
+						}
+
+						accountDetailsList.add(map);
+					}
+
+					response.setMsg("OK");
+					response.setResponse(accountDetailsList);
+					return response;
+				} else {
+					response.setMsg("null accounts");
+					response.setResponse(accountDetailsList);
+					return response;
+				}
+			} else {
+				response.setMsg("Request Parameter is null ");
+				response.setResponse(null);
+				return response;
+			}
+		} catch (Exception e) {
+			log.error("error :" + e.getMessage());
+			response.setMsg("Something Went Wrong");
+			return response;
+		}
+
+	}
+
 	@Override
 	public Response getTeamRelationshipHealthForDashboard(RequestParamDashboard requestParam) {
 		// TODO Auto-generated method stub
@@ -138,10 +206,10 @@ public class DashboardServiceImpl implements IDashboardService {
 				if (account != null) {
 					TeamRelationshipHealthDashboardData teamRelationshipData = new TeamRelationshipHealthDashboardData();
 					List<TeamRelationshipHealth> teamList = new ArrayList<>();
-						
-					List<String> EmployeeEmails = retailEmployeeCsatSummaryRepo.findDistinctEmployees(account.getAccountId());
-					if(EmployeeEmails.size()!=0)
-					{
+
+					List<String> EmployeeEmails = retailEmployeeCsatSummaryRepo
+							.findDistinctEmployees(account.getAccountId());
+					if (EmployeeEmails.size() != 0) {
 						for (String empEmail : EmployeeEmails) {
 							int empId = employeeEmailMappingRepositry.getEmpId(empEmail);
 							Employee emp = employeeRepo.findByEmployeeId(empId);
@@ -154,19 +222,17 @@ public class DashboardServiceImpl implements IDashboardService {
 							teamData.setRelationships(account.getAccountCsatSummary().getRelationships());
 
 							double score = retailEmployeeCsatSummaryRepo.getAvgCsatScore(empEmail);
-							score=Math.floor(score * 100) / 100;
+							score = Math.floor(score * 100) / 100;
 							teamData.setScore(score);
 							teamList.add(teamData);
 						}
 						teamRelationshipData.setTeamRelationshipHealth(teamList);
 						response.setMsg("OK");
 						response.setResponse(teamRelationshipData);
-					}
-					else
-					{
+					} else {
 						response.setMsg("NO Employees under this Account Exists");
 					}
-				
+
 				} else {
 					response.setMsg("No such Client exists");
 				}
@@ -232,10 +298,12 @@ public class DashboardServiceImpl implements IDashboardService {
 						map.put("escalations", account.getAccountCsatSummary().getEscalations());
 						map.put("relationships", account.getAccountCsatSummary().getRelationships());
 						// OverAll Health - fetch All Employees and get total score of them
-						List<String> listOfEmpEmails = retailEmployeeCsatSummaryRepo.findDistinctEmployees(account.getAccountId());
+						List<String> listOfEmpEmails = retailEmployeeCsatSummaryRepo
+								.findDistinctEmployees(account.getAccountId());
 						double empScore = 0.00;
 						for (String email : listOfEmpEmails) {
-							empScore += retailEmployeeCsatSummaryRepo.getAvgScoreOfAccount(email, account.getAccountId());
+							empScore += retailEmployeeCsatSummaryRepo.getAvgScoreOfAccount(email,
+									account.getAccountId());
 						}
 						double totalScore = (empScore / listOfEmpEmails.size());
 						map.put("overall_health", totalScore);

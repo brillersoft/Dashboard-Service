@@ -40,7 +40,7 @@ public class Account extends AuditFields<String> {
 	@OneToOne
 	@JoinColumn(name = "account_id")
 	private CrmAccountData crmAccountData;
-
+	
 	public CrmAccountData getCrmAccountData() {
 		return crmAccountData;
 	}
@@ -48,8 +48,6 @@ public class Account extends AuditFields<String> {
 	public void setCrmAccountData(CrmAccountData crmAccountData) {
 		this.crmAccountData = crmAccountData;
 	}
-
-
 
 	public int getAccountId() {
 		return accountId;
